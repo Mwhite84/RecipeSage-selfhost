@@ -19,10 +19,14 @@ services:
     container_name: recipesage_api
     image: julianpoy/recipesage-selfhost:api-v3.0.10
     depends_on:
-      - postgres
-      - typesense
-      - pushpin
-      - browserless
+      postgres:
+        condition: service_healthy
+      typesense:
+        condition: service_started
+      pushpin:
+        condition: service_started
+      browserless:
+        condition: service_started
     command: sh -c "npx prisma migrate deploy; npx nx seed prisma; npx ts-node --swc --project packages/backend/tsconfig.json packages/backend/src/bin/www"
     environment:
       - STORAGE_TYPE=filesystem
@@ -83,6 +87,12 @@ services:
     volumes:
       - postgresdata:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "db_prod"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
   browserless: # A headless browser for scraping websites with the auto import tool
     container_name: recipesage_browserless
     image: ghcr.io/browserless/chromium:v2.24.3
