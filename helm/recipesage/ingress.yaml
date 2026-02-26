@@ -1,0 +1,26 @@
+#RecipeSage
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: recipesage-ingress
+  namespace: media  # Replace with your namespace
+  annotations:
+    konghq.com/protocols: "https"          # Kong accepts HTTPS traffic
+    konghq.com/strip-path: "true"         # Strips the path before forwarding    
+spec:
+  ingressClassName: kong                   # Use the Kong ingress class
+  tls:
+    - hosts:
+        - recipes.levenite.com               # The domain for which TLS is terminated
+      secretName: levenite-tls                # The secret containing the certificate and key
+  rules:
+    - host: recipes.levenite.com
+      http:
+        paths:
+          - path: /                       # Matches all traffic under "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: recipesage                # The backend Kubernetes service
+                port:
+                  number: 80          # Port exposed by the service

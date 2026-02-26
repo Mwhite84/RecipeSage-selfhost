@@ -1,0 +1,280 @@
+# This chart uses the bjw-s/k8s-at-home common library chart.
+# Default values: https://github.com/bjw-s/helm-charts/tree/main/charts/library/common/values.yaml
+
+# -- Override the default chart name
+nameOverride: ""
+# -- Override the full chart name
+fullnameOverride: ""
+
+global:
+  labels: {}
+
+controllers:
+  proxy:
+    containers:
+      proxy:
+        image:
+          repository: julianpoy/recipesage-selfhost-proxy
+          tag: v4.0.0
+          pullPolicy: Always
+        ports:
+          - name: http
+            containerPort: 80
+
+  static:
+    containers:
+      static:
+        image:
+          #repository: julianpoy/recipesage-selfhost
+          #tag: static-v3.0.10
+          repository: recipesage-selfhost
+          tag: static-selfhost-20260220
+          pullPolicy: IfNotPresent
+        env:
+          NODE_ENV: selfhost
+        ports:
+          - name: http
+            containerPort: 80
+
+  api:
+    initContainers:
+      wait-postgres:
+        image:
+          repository: postgres
+          tag: "16"
+        command:
+          - sh
+          - -c
+        args:
+          - until pg_isready -h recipesage-postgres -p 5432 -U recipesage_selfhost; do sleep 2; done
+      wait-typesense:
+        image:
+          repository: curlimages/curl
+          tag: "8.7.1"
+        command:
+          - sh
+          - -c
+        args:
+          - until curl -fsS http://recipesage-typesense:8108/health >/dev/null; do sleep 2; done; sleep 5
+    containers:
+      api:
+        image:
+          #repository: julianpoy/recipesage-selfhost
+          #tag: api-v3.0.10
+          repository: recipesage-selfhost
+          tag: api-selfhost-20260221-v2
+          pullPolicy: IfNotPresent
+        command:
+          - sh
+          - -c
+        args:
+          - npx prisma migrate deploy; npx nx seed prisma; node dist/apps/backend/main.cjs
+        env:
+          STORAGE_TYPE: filesystem
+          FILESYSTEM_STORAGE_PATH: /rs-media
+          NODE_ENV: selfhost
+          VERBOSE: "false"
+          VERSION: selfhost
+          POSTGRES_DB: recipesage_selfhost
+          POSTGRES_USER: recipesage_selfhost
+          POSTGRES_PASSWORD: recipesage_selfhost
+          POSTGRES_PORT: "5432"
+          POSTGRES_HOST: "{{ include \"bjw-s.common.lib.chart.names.fullname\" . }}-postgres"
+          POSTGRES_SSL: "false"
+          POSTGRES_LOGGING: "false"
+          DATABASE_URL: "postgresql://recipesage_selfhost:recipesage_selfhost@{{ include \"bjw-s.common.lib.chart.names.fullname\" . }}-postgres:5432/recipesage_selfhost"
+          GCM_KEYPAIR: ""
+          SENTRY_DSN: ""
+          GRIP_URL: "http://{{ include \"bjw-s.common.lib.chart.names.fullname\" . }}-pushpin:5561/"
+          GRIP_KEY: changeme
+          SEARCH_PROVIDER: typesense
+          TYPESENSE_NODES: '[{"host":"{{ include "bjw-s.common.lib.chart.names.fullname" . }}-typesense","port":8108,"protocol":"http"}]'
+          TYPESENSE_API_KEY: recipesage_selfhost
+          STRIPE_SK: ""
+          STRIPE_WEBHOOK_SECRET: ""
+          BROWSERLESS_HOST: "{{ include \"bjw-s.common.lib.chart.names.fullname\" . }}-browserless"
+          BROWSERLESS_PORT: "3000"
+          INGREDIENT_INSTRUCTION_CLASSIFIER_URL: "http://{{ include \"bjw-s.common.lib.chart.names.fullname\" . }}-ingredient-instruction-classifier:3000/"
+          OPENAI_API_KEY: ""
+        ports:
+          - name: http
+            containerPort: 3000
+
+  typesense:
+    containers:
+      typesense:
+        image:
+          repository: typesense/typesense
+          tag: 0.24.1
+          pullPolicy: IfNotPresent
+        args:
+          - --data-dir
+          - /data
+          - --api-key=recipesage_selfhost
+          - --enable-cors
+        ports:
+          - name: http
+            containerPort: 8108
+
+  pushpin:
+    containers:
+      pushpin:
+        image:
+          repository: julianpoy/pushpin
+          tag: 2023-09-17
+          pullPolicy: IfNotPresent
+        command:
+          - /bin/sh
+          - -c
+        args:
+          - sed -i "s/sig_key=changeme/sig_key=$$GRIP_KEY/" /etc/pushpin/pushpin.conf && echo "* $${TARGET},over_http" > /etc/pushpin/routes && pushpin --merge-output
+        env:
+          GRIP_KEY: changeme
+          TARGET: "{{ include \"bjw-s.common.lib.chart.names.fullname\" . }}-api:3000"
+        ports:
+          - name: grip
+            containerPort: 5561
+          - name: ws
+            containerPort: 7999
+
+  postgres:
+    containers:
+      postgres:
+        image:
+          repository: postgres
+          tag: "16"
+          pullPolicy: IfNotPresent
+        env:
+          POSTGRES_DB: recipesage_selfhost
+          POSTGRES_USER: recipesage_selfhost
+          POSTGRES_PASSWORD: recipesage_selfhost
+        ports:
+          - name: postgres
+            containerPort: 5432
+
+  browserless:
+    containers:
+      browserless:
+        image:
+          repository: ghcr.io/browserless/chromium
+          tag: v2.24.3
+          pullPolicy: IfNotPresent
+        env:
+          MAX_CONCURRENT_SESSIONS: "3"
+          MAX_QUEUE_LENGTH: "10"
+        ports:
+          - name: http
+            containerPort: 3000
+
+  ingredient-instruction-classifier:
+    enabled: false
+    containers:
+      ingredient-instruction-classifier:
+        image:
+          repository: julianpoy/ingredient-instruction-classifier
+          tag: 1.4.11
+          pullPolicy: IfNotPresent
+        env:
+          SENTENCE_EMBEDDING_BATCH_SIZE: "200"
+          PREDICTION_CONCURRENCY: "2"
+        ports:
+          - name: http
+            containerPort: 3000
+
+service:
+  proxy:
+    controller: proxy
+    primary: true
+    ports:
+      http:
+        port: 80
+
+  static:
+    controller: static
+    ports:
+      http:
+        port: 80
+
+  api:
+    controller: api
+    ports:
+      http:
+        port: 3000
+
+  typesense:
+    controller: typesense
+    ports:
+      http:
+        port: 8108
+
+  pushpin:
+    controller: pushpin
+    ports:
+      grip:
+        port: 5561
+      ws:
+        port: 7999
+
+  postgres:
+    controller: postgres
+    ports:
+      postgres:
+        port: 5432
+
+  browserless:
+    controller: browserless
+    ports:
+      http:
+        port: 3000
+
+  ingredient-instruction-classifier:
+    enabled: false
+    controller: ingredient-instruction-classifier
+    ports:
+      http:
+        port: 3000
+
+# Kong will handle ingress
+ingress:
+  main:
+    enabled: false
+
+persistence:
+  proxy-config:
+    enabled: true
+    type: configMap
+    name: "{{ include \"bjw-s.common.lib.chart.names.fullname\" . }}-proxy-config"
+    advancedMounts:
+      proxy:
+        proxy:
+          - path: /etc/nginx/conf.d/default.conf
+            subPath: default.conf
+
+  apimedia:
+    enabled: true
+    type: persistentVolumeClaim
+    existingClaim: recipesage-apimedia
+    advancedMounts:
+      api:
+        api:
+          - path: /rs-media
+
+  typesensedata:
+    enabled: true
+    type: persistentVolumeClaim
+    existingClaim: recipesage-typesensedata
+    advancedMounts:
+      typesense:
+        typesense:
+          - path: /data
+
+  postgresdata:
+    enabled: true
+    type: persistentVolumeClaim
+    existingClaim: recipesage-postgresdata
+    advancedMounts:
+      postgres:
+        postgres:
+          - path: /var/lib/postgresql/data
+
+resources: {}

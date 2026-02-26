@@ -1,0 +1,95 @@
+#APIMEDIA
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: recipesage-apimedia
+  labels:
+    type: local
+spec:
+  storageClassName: local-storage-nowait
+  capacity:
+    storage: 25Gi
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    namespace: media
+    name: recipesage-apimedia
+  hostPath:
+    path: "/local/media-configs/recipesage/apimedia"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: recipesage-apimedia
+  namespace: media
+spec:
+  storageClassName: local-storage-nowait
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 25Gi
+---
+#POSTGRESDATA
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: recipesage-postgresdata
+  labels:
+    type: local
+spec:
+  storageClassName: local-storage-nowait
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    namespace: media
+    name: recipesage-postgresdata
+  hostPath:
+    path: "/local/media-configs/recipesage/postgresdata"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: recipesage-postgresdata
+  namespace: media
+spec:
+  storageClassName: local-storage-nowait
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+#POSTGRESDATA
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: recipesage-typesensedata
+  labels:
+    type: local
+spec:
+  storageClassName: local-storage-nowait
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    namespace: media
+    name: recipesage-typesensedata
+  hostPath:
+    path: "/local/media-configs/recipesage/typesensedata"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: recipesage-typesensedata
+  namespace: media
+spec:
+  storageClassName: local-storage-nowait
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
