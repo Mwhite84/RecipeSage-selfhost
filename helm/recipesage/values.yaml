@@ -25,11 +25,13 @@ controllers:
     containers:
       static:
         image:
-          #repository: julianpoy/recipesage-selfhost
-          #tag: static-v3.0.10
-          repository: recipesage-selfhost
-          tag: static-selfhost-20260220
-          pullPolicy: IfNotPresent
+          #repository: 192.168.0.225:30500/recipesage-static
+          #tag: v1.3.3
+          repository: 192.168.0.225:30500/recipesage-static
+          tag: v1.4.0
+          #repository: recipesage-selfhost
+          #tag: static-selfhost-20260220
+          pullPolicy: Always
         env:
           NODE_ENV: selfhost
         ports:
@@ -61,9 +63,9 @@ controllers:
         image:
           #repository: julianpoy/recipesage-selfhost
           #tag: api-v3.0.10
-          repository: recipesage-selfhost
-          tag: api-selfhost-20260221-v2
-          pullPolicy: IfNotPresent
+          repository: 192.168.0.225:30500/recipesage-api
+          tag: v3.0.10-custom
+          pullPolicy: Always
         command:
           - sh
           - -c
@@ -96,6 +98,7 @@ controllers:
           BROWSERLESS_PORT: "3000"
           INGREDIENT_INSTRUCTION_CLASSIFIER_URL: "http://{{ include \"bjw-s.common.lib.chart.names.fullname\" . }}-ingredient-instruction-classifier:3000/"
           OPENAI_API_KEY: ""
+          JOB_QUEUE_WORKER_PATH: "/app/dist/apps/queue-worker/worker.cjs"
         ports:
           - name: http
             containerPort: 3000
