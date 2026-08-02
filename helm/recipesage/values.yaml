@@ -28,6 +28,11 @@ controllers:
           #repository: 192.168.0.225:30500/recipesage-static
           #tag: v1.3.3
           repository: 192.168.0.225:30500/recipesage-static
+          # v1.5.0 (upstream merge) is built and pushed, but BLOCKED: the master
+          # frontend calls trpc procedures api.recipesage.com does not expose
+          # (recipes.getRecipeCount, users.getMyCapabilities) -> blocking
+          # "Resource Not Found" modal on every page. See
+          # recipesage/docs/upstream-merge-decisions.md
           tag: v1.4.0
           #repository: recipesage-selfhost
           #tag: static-selfhost-20260220
