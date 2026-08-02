@@ -40,9 +40,17 @@ controllers:
           # control; do NOT grep for api.recipesage.com, which legitimately
           # appears as a server-picker preset.
           #
-          # Rollback: helm rollback recipesage <rev with v1.5.1-selfhost>
+          # v1.5.3-selfhost (commit d209ec1a) adds: per-theme --rs-field-surface so
+          # inputs stay visible in dark/black (v1.5.2 bound them to a surface that
+          # sits BELOW the card, making them invisible on dark); keyboard focus
+          # rings that actually work on ion-button (the host never matches
+          # :focus-visible — Ionic's button is in shadow DOM — so the ring hangs
+          # off .ion-focused); and a cleaned-up login page with the self-host
+          # disclaimers removed.
+          #
+          # Rollback: helm rollback recipesage <rev with v1.5.2-selfhost>
           # NEVER deploy v1.5.0-selfhost — mislabelled, it is a production build.
-          tag: v1.5.2-selfhost
+          tag: v1.5.3-selfhost
           #repository: recipesage-selfhost
           #tag: static-selfhost-20260220
           pullPolicy: Always
