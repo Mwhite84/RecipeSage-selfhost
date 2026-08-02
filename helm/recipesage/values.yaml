@@ -28,12 +28,12 @@ controllers:
           #repository: 192.168.0.225:30500/recipesage-static
           #tag: v1.3.3
           repository: 192.168.0.225:30500/recipesage-static
-          # v1.5.0 (upstream merge) is built and pushed, but BLOCKED: the master
-          # frontend calls trpc procedures api.recipesage.com does not expose
-          # (recipes.getRecipeCount, users.getMyCapabilities) -> blocking
-          # "Resource Not Found" modal on every page. See
-          # recipesage/docs/upstream-merge-decisions.md
-          tag: v1.4.0
+          # v1.5.0-selfhost: upstream merge, built with --configuration=selfhost so
+          # the API base derives from location.host -> /api/, served by
+          # recipesage-api v3.1.0-custom from the SAME merged commit. Frontend and
+          # backend are now the same version, which is what removed the cloud skew.
+          # Rollback: helm rollback recipesage <rev with v1.4.0>
+          tag: v1.5.1-selfhost
           #repository: recipesage-selfhost
           #tag: static-selfhost-20260220
           pullPolicy: Always
