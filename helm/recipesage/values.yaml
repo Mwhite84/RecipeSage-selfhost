@@ -28,12 +28,21 @@ controllers:
           #repository: 192.168.0.225:30500/recipesage-static
           #tag: v1.3.3
           repository: 192.168.0.225:30500/recipesage-static
-          # v1.5.0-selfhost: upstream merge, built with --configuration=selfhost so
-          # the API base derives from location.host -> /api/, served by
-          # recipesage-api v3.1.0-custom from the SAME merged commit. Frontend and
-          # backend are now the same version, which is what removed the cloud skew.
-          # Rollback: helm rollback recipesage <rev with v1.4.0>
-          tag: v1.5.1-selfhost
+          # v1.5.2-selfhost: design-system pass (commit eb89b6e5) on top of the
+          # upstream merge. Applies Morgan's --rs-* tokens across the app, fixes
+          # WCAG AA contrast + keyboard focus, restores the sticky save footer,
+          # the home tile sizing, and the ingredient line editor.
+          #
+          # Built from packages/frontend/www via `nx build:selfhost frontend`
+          # (NOT `nx build --configuration=selfhost` — see the note in
+          # packages/frontend/project.json). Verify a selfhost bundle by the
+          # ABSENCE of the prod Google GSI id and pk_live, with a positive
+          # control; do NOT grep for api.recipesage.com, which legitimately
+          # appears as a server-picker preset.
+          #
+          # Rollback: helm rollback recipesage <rev with v1.5.1-selfhost>
+          # NEVER deploy v1.5.0-selfhost — mislabelled, it is a production build.
+          tag: v1.5.2-selfhost
           #repository: recipesage-selfhost
           #tag: static-selfhost-20260220
           pullPolicy: Always
@@ -169,7 +178,12 @@ controllers:
           - name: postgres
             containerPort: 5432
 
+  # browserless removed 2026-08-02: nothing referenced it. The merged backend
+  # dropped BROWSERLESS_* from its config entirely, so this was a chromium pod
+  # burning memory for no consumer. Re-add here (and the matching service below)
+  # if a future upstream reintroduces headless-browser clipping.
   browserless:
+    enabled: false
     containers:
       browserless:
         image:
@@ -239,6 +253,7 @@ service:
         port: 5432
 
   browserless:
+    enabled: false
     controller: browserless
     ports:
       http:
